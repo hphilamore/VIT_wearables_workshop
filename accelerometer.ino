@@ -1,0 +1,102 @@
+void acceleration_3D(){
+  /*
+  Returns the acceleration in x, y, and x directions in units milli-G 
+  */
+//  X = float((myIMU.readAccelX()));
+//  Y = float((myIMU.readAccelY()));
+//  Z = float((myIMU.readAccelZ()));
+
+  lsm.read();  
+
+  X = (float)lsm.accelData.x;
+  Y = (float)lsm.accelData.y;
+  Z = (float)lsm.accelData.z;
+
+  acceleration[x_] = X;
+  acceleration[y_] = Y;
+  acceleration[z_] = Z;
+}
+
+
+void magnitude_3D(){
+  /*
+  Returns the magnitude of the 3D acceleration vector 
+  */
+ 
+  M = sqrt(sq(X)+sq(Y)+sq(Z));
+}
+
+
+
+void step_counter(){
+  /*
+  Cumulatively sums the number of steps taken. 
+  Flashes an LED when a step is logged.
+  */
+
+  magnitude_3D();
+
+  int th = step_threshold;
+
+  // if the magnitude is greater than the threshold and the flag is down...
+  if (M>th && flag==0){
+      
+      steps=steps+10;      // ...count a setp
+ 
+      flag=1;             // ...raise the flag
+      
+      digitalWrite(LED_BUILTIN, HIGH);   // LED on
+      // neopixel_RED();
+      delay(100);                        // wait
+      digitalWrite(LED_BUILTIN, LOW);    // LED off
+      // neopixel_OFF();
+    }
+
+
+  // if the flag is up, the step has already been counted 
+  else if (M>th && flag==1)
+    {
+      // do nothing
+    }
+
+
+  // if the magnitude is less than the threshold and the flag is up, put the flag down
+  if (M<th  && flag==1)
+  {   
+    flag=0;          
+  }
+}
+
+
+void pace(){
+  /*
+  Calculates the average pace (steps / time second)
+  Lights an LED if the pace drops below a threshold value
+  */
+
+  magnitude_3D();
+  
+  unsigned long p = pace_period;
+  int th = pace_threshold;
+
+  // if time since last measurement exceeds period, calculate pace
+  if ((millis() - startTime) > p){
+     int stepsNew = steps;     
+     endTime = millis();
+     float paceAve = float(stepsNew - stepsOld) / float(endTime - startTime); 
+     int stepsOld = steps;
+     startTime = millis(); 
+
+     // if the pace falls below a threshold, turn LED on
+     if (paceAve < th){     
+        digitalWrite(LED_BUILTIN, HIGH);   // LED on
+        // neopixel_BLUE();
+     }
+  
+     // otherwise turn it off
+     else{                
+        digitalWrite(LED_BUILTIN, LOW);    // LED off
+        // neopixel_OFF();
+     }
+   }
+}
